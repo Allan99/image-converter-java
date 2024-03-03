@@ -1,6 +1,8 @@
 package entities;
 
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -8,12 +10,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -29,9 +32,11 @@ public class ImageConverterGUI extends JPanel {
 
 	private JButton openImageBtn = new JButton("Open Image");
 	private JButton convertClickBtn = new JButton("Convert");
+	private JButton saveInBtn = new JButton("Save in");
 
 	private JTextField imagePathTxt = new JTextField();
-	private JTextField originalImageFormatTxt = new JTextField(5);
+	private JTextField originalImageFormatTxt = new JTextField(7);
+	private JTextField saveInTxt = new JTextField();
 
 	private JLabel imageLbl = new JLabel();
 	private JLabel originalFormatLbl = new JLabel("Original Format:");
@@ -43,7 +48,7 @@ public class ImageConverterGUI extends JPanel {
 
 	private JPanel panel = new JPanel();
 
-	private JComboBox imageFormats = new JComboBox();
+	private JComboBox imageFormats;
 
 	public ImageConverterGUI() {
 		run();
@@ -56,15 +61,24 @@ public class ImageConverterGUI extends JPanel {
 
 		setPreferredSize(new Dimension(400, 400));
 
+		String[] formats = { "JPEG", "PNG", "GIF", "TIFF", "BMP", "PDF" };
+
+		imageFormats = new JComboBox(formats);
+
 		convertClickBtn.setEnabled(false);
 
 		openImageBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				chooseFile.showSaveDialog(null);
-				if (chooseFile.getSelectedFile() != null) {
+				chooseFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
+				int res = chooseFile.showOpenDialog(null);
+				if (res == JFileChooser.APPROVE_OPTION) {
 					String absolutePath = chooseFile.getSelectedFile().getAbsolutePath();
+					String exhibitParent = chooseFile.getSelectedFile().getParent();
 					imagePathTxt.setText(absolutePath);
+					if(saveInTxt.getText().length() == 0) {
+						saveInTxt.setText(exhibitParent);
+					}
 					imageLbl.setIcon(new ImageIcon(absolutePath));
 					panel.add(imageLbl);
 					scrollPane.setViewportView(panel);
@@ -73,7 +87,35 @@ public class ImageConverterGUI extends JPanel {
 				}
 			}
 		});
-		;
+
+		convertClickBtn.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				File f = new File(imagePathTxt.getText());//imagem original
+				String format = imageFormats.getSelectedItem().toString().toLowerCase();//formato final
+				String name = f.getName().replaceAll("\\.[a-z]{2,}", "."+format);//alterando o formato da imagem
+				String saveIn = saveInTxt.getText() + "\\" + name;
+				
+				try {
+					ImageConverter.convertFormat(f.getAbsolutePath(), saveIn, format.toUpperCase());
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}
+
+		});
+		
+		saveInBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				chooseFile.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				int res = chooseFile.showOpenDialog(null);
+				if(res == JFileChooser.APPROVE_OPTION) {
+					saveInTxt.setText(chooseFile.getSelectedFile().getAbsolutePath());
+				}
+			}
+		});
 
 		GridBagConstraints scrollConst = new GridBagConstraints();
 		scrollConst.gridx = 0;
@@ -81,9 +123,11 @@ public class ImageConverterGUI extends JPanel {
 		scrollConst.gridwidth = 4;
 		scrollConst.gridheight = 1;
 		scrollConst.weightx = 1.0;
+		scrollConst.weighty = 1.0;
 		scrollConst.fill = GridBagConstraints.BOTH;
 		scrollPane.setPreferredSize(new Dimension(400, 470));
 		scrollConst.insets = new Insets(10, 10, 10, 10);
+		scrollPane.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		add(scrollPane, scrollConst);
 
 		GridBagConstraints gbc4 = new GridBagConstraints();
@@ -91,7 +135,8 @@ public class ImageConverterGUI extends JPanel {
 		gbc4.gridy = 1;
 		gbc4.gridwidth = 1;
 		gbc4.anchor = GridBagConstraints.WEST;
-		gbc4.insets = new Insets(10, 10, 10, 10);
+		gbc4.insets = new Insets(10, 10, 10, 3);
+		originalFormatLbl.setFont(new Font("Helvetica", Font.BOLD, 15));
 		add(originalFormatLbl, gbc4);
 
 		GridBagConstraints originalImageFormatConstraints = new GridBagConstraints();
@@ -99,7 +144,11 @@ public class ImageConverterGUI extends JPanel {
 		originalImageFormatConstraints.gridy = 1;
 		originalImageFormatConstraints.anchor = GridBagConstraints.WEST;
 		originalImageFormatConstraints.gridwidth = 1;
-		originalImageFormatConstraints.insets = new Insets(10, 10, 10, 10);
+		originalImageFormatConstraints.fill = GridBagConstraints.HORIZONTAL;
+		originalImageFormatConstraints.insets = new Insets(10, 20, 10, 20);
+		originalImageFormatTxt.setFont(new Font("Helvetica", Font.BOLD, 15));
+		originalImageFormatTxt.setHorizontalAlignment(JTextField.CENTER);
+		originalImageFormatTxt.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		originalImageFormatTxt.setEditable(false);
 		add(originalImageFormatTxt, originalImageFormatConstraints);
 
@@ -108,7 +157,8 @@ public class ImageConverterGUI extends JPanel {
 		convertToConstraints.gridy = 1;
 		convertToConstraints.anchor = GridBagConstraints.WEST;
 		convertToConstraints.gridwidth = 1;
-		convertToConstraints.insets = new Insets(10, 10, 10, 10);
+		convertToConstraints.insets = new Insets(10, 3, 10, 3);
+		convertToLbl.setFont(new Font("Helvetica", Font.BOLD, 15));
 		add(convertToLbl, convertToConstraints);
 
 		GridBagConstraints imageFormatsConstraints = new GridBagConstraints();
@@ -116,7 +166,8 @@ public class ImageConverterGUI extends JPanel {
 		imageFormatsConstraints.gridy = 1;
 		imageFormatsConstraints.anchor = GridBagConstraints.WEST;
 		imageFormatsConstraints.gridwidth = 1;
-		imageFormatsConstraints.insets = new Insets(10, 10, 10, 10);
+		imageFormatsConstraints.insets = new Insets(10, 3, 10, 3);
+		imageFormats.setFont(new Font("Helvetica", Font.BOLD, 15));
 		add(imageFormats, imageFormatsConstraints);
 
 		GridBagConstraints openImageBtnConstraints = new GridBagConstraints();
@@ -125,6 +176,7 @@ public class ImageConverterGUI extends JPanel {
 		openImageBtnConstraints.anchor = GridBagConstraints.WEST;
 		openImageBtnConstraints.gridwidth = 1;
 		openImageBtnConstraints.insets = new Insets(10, 10, 10, 10);
+		openImageBtn.setFont(new Font("Helvetica", Font.BOLD, 15));
 		add(openImageBtn, openImageBtnConstraints);
 
 		GridBagConstraints imagePathTxtConstraints = new GridBagConstraints();
@@ -133,33 +185,53 @@ public class ImageConverterGUI extends JPanel {
 		imagePathTxtConstraints.gridwidth = GridBagConstraints.REMAINDER;
 		imagePathTxtConstraints.fill = GridBagConstraints.BOTH;
 		imagePathTxtConstraints.insets = new Insets(10, 10, 10, 10);
+		imagePathTxt.setFont(new Font("Helvetica", Font.BOLD, 15));
+		imagePathTxt.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		imagePathTxt.setEditable(false);
 		add(imagePathTxt, imagePathTxtConstraints);
 
-		// Insets(int top, int left, int bottom, int right)
+		GridBagConstraints saveInBtnConstraints = new GridBagConstraints();
+		saveInBtnConstraints.gridx = 0;
+		saveInBtnConstraints.gridy = 3;
+		saveInBtnConstraints.anchor = GridBagConstraints.WEST;
+		saveInBtnConstraints.insets = new Insets(10, 10, 10, 10);
+		saveInBtn.setFont(new Font("Helvetica", Font.BOLD, 15));
+		add(saveInBtn, saveInBtnConstraints);
+
+		GridBagConstraints saveInTxtConstraints = new GridBagConstraints();
+		saveInTxtConstraints.gridx = 1;
+		saveInTxtConstraints.gridy = 3;
+		saveInTxtConstraints.gridwidth = GridBagConstraints.REMAINDER;
+		saveInTxtConstraints.fill = GridBagConstraints.BOTH;
+		saveInTxtConstraints.insets = new Insets(10, 10, 10, 10);
+		saveInTxt.setFont(new Font("Helvetica", Font.BOLD, 15));
+		saveInTxt.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		saveInTxt.setEditable(false);
+		add(saveInTxt, saveInTxtConstraints);
 
 		GridBagConstraints convertClickBtnConstraints = new GridBagConstraints();
 		convertClickBtnConstraints.gridx = 0;
-		convertClickBtnConstraints.gridy = 3;
+		convertClickBtnConstraints.gridy = 4;
 		convertClickBtnConstraints.anchor = GridBagConstraints.WEST;
 		convertClickBtnConstraints.insets = new Insets(10, 10, 10, 10);
+		convertClickBtn.setFont(new Font("Helvetica", Font.BOLD, 15));
 		add(convertClickBtn, convertClickBtnConstraints);
 	}
 
 	private String getImageFormat(String imagePath) {
 		try {
-		ImageInputStream inputStream = ImageIO.createImageInputStream(new File(imagePath));
-		Iterator<ImageReader> iter = ImageIO.getImageReaders(inputStream);
-		if (!iter.hasNext()) {
-			throw new RuntimeException("No readers found!");
-		}
-		ImageReader reader = iter.next();
-		inputStream.close();
-		return reader.getFormatName();
-		}catch(IOException e) {
+			ImageInputStream inputStream = ImageIO.createImageInputStream(new File(imagePath));
+			Iterator<ImageReader> iter = ImageIO.getImageReaders(inputStream);
+			if (!iter.hasNext()) {
+				throw new RuntimeException("No readers found!");
+			}
+			ImageReader reader = iter.next();
+			inputStream.close();
+			return reader.getFormatName();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
-
+	
 }
