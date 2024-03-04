@@ -1,4 +1,4 @@
-package entities;
+package model.entities;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -30,9 +30,9 @@ public class ImageConverterGUI extends JPanel {
 
 	private GridBagLayout layout;
 
-	private JButton openImageBtn = new JButton("Open Image");
-	private JButton convertClickBtn = new JButton("Convert");
-	private JButton saveInBtn = new JButton("Save in");
+	private JButton openImageBtn = new JButton("Open Image", new ImageIcon("icons/abrir-pasta.png"));
+	private JButton convertClickBtn = new JButton("Convert", new ImageIcon("icons/actualizar.png"));
+	private JButton saveInBtn = new JButton("Save in", new ImageIcon("icons/salvar.png"));
 
 	private JTextField imagePathTxt = new JTextField();
 	private JTextField originalImageFormatTxt = new JTextField(7);
@@ -66,7 +66,7 @@ public class ImageConverterGUI extends JPanel {
 		imageFormats = new JComboBox(formats);
 
 		convertClickBtn.setEnabled(false);
-
+		
 		openImageBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -92,16 +92,22 @@ public class ImageConverterGUI extends JPanel {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				File f = new File(imagePathTxt.getText());//imagem original
-				String format = imageFormats.getSelectedItem().toString().toLowerCase();//formato final
-				String name = f.getName().replaceAll("\\.[a-z]{2,}", "."+format);//alterando o formato da imagem
-				String saveIn = saveInTxt.getText() + "\\" + name;
-				
-				try {
-					ImageConverter.convertFormat(f.getAbsolutePath(), saveIn, format.toUpperCase());
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
+				new Thread() {
+					
+					public void run() {
+						File f = new File(imagePathTxt.getText());//imagem original
+						String format = imageFormats.getSelectedItem().toString().toLowerCase();//formato final
+						String name = f.getName().replaceAll("\\.[a-z]{2,}", "."+format);//alterando o formato da imagem
+						String saveIn = saveInTxt.getText() + "\\" + name;
+						
+						try {
+							ImageConverter.convertFormat(f.getAbsolutePath(), saveIn, format.toUpperCase());
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					};
+					
+				}.start();
 			}
 
 		});
@@ -135,7 +141,7 @@ public class ImageConverterGUI extends JPanel {
 		gbc4.gridy = 1;
 		gbc4.gridwidth = 1;
 		gbc4.anchor = GridBagConstraints.WEST;
-		gbc4.insets = new Insets(10, 10, 10, 3);
+		gbc4.insets = new Insets(10, 10, 10, 0);
 		originalFormatLbl.setFont(new Font("Helvetica", Font.BOLD, 15));
 		add(originalFormatLbl, gbc4);
 
@@ -144,8 +150,9 @@ public class ImageConverterGUI extends JPanel {
 		originalImageFormatConstraints.gridy = 1;
 		originalImageFormatConstraints.anchor = GridBagConstraints.WEST;
 		originalImageFormatConstraints.gridwidth = 1;
+		originalImageFormatConstraints.ipadx = 57;
 		originalImageFormatConstraints.fill = GridBagConstraints.HORIZONTAL;
-		originalImageFormatConstraints.insets = new Insets(10, 20, 10, 20);
+		originalImageFormatConstraints.insets = new Insets(10, 10, 10, 10);
 		originalImageFormatTxt.setFont(new Font("Helvetica", Font.BOLD, 15));
 		originalImageFormatTxt.setHorizontalAlignment(JTextField.CENTER);
 		originalImageFormatTxt.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
@@ -168,6 +175,7 @@ public class ImageConverterGUI extends JPanel {
 		imageFormatsConstraints.gridwidth = 1;
 		imageFormatsConstraints.insets = new Insets(10, 3, 10, 3);
 		imageFormats.setFont(new Font("Helvetica", Font.BOLD, 15));
+		imageFormats.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		add(imageFormats, imageFormatsConstraints);
 
 		GridBagConstraints openImageBtnConstraints = new GridBagConstraints();

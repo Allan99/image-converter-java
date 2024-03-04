@@ -2,7 +2,7 @@ package application;
 
 import java.io.IOException;
 
-import entities.ImageConverter;
+import model.entities.ImageConverter;
 
 public class Program {
 

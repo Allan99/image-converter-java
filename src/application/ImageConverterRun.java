@@ -4,7 +4,7 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 
-import entities.ImageConverterGUI;
+import model.entities.ImageConverterGUI;
 
 public class ImageConverterRun extends JFrame {
 
